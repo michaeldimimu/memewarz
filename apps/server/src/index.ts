@@ -33,6 +33,5 @@ io.on('connection', (socket) => {
 export { io };
 
 server.listen(Number(PORT), () => {
-  // eslint-disable-next-line no-console
   console.log(`Server listening on http://localhost:${PORT}`);
 });

@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PlayerType {
+  contestant
+  voter
+}
+
+model Player {
+  id             Int        @id @default(autoincrement())
+  player_name    String
+  player_type    PlayerType
+  wallet_id      String
+  wallet_balance Float      @default(0)
+  games          Game[]
+  createdAt      DateTime   @default(now())
+}
+
+model Host {
+  id             Int      @id @default(autoincrement())
+  host_name      String
+  wallet_balance Float    @default(0)
+  games          Game[]
+  createdAt      DateTime   @default(now())
+}
+
+model Game {
+  id         Int      @id @default(autoincrement())
+  room_name  String
+  time_limit String
+  prize_pool Float    @default(0)
+  game_code  Int      @unique
+  host_id    Int
+  host       Host     @relation(fields: [host_id], references: [id])
+  players    Player[] // many-to-many: game <-> players
+  createdAt      DateTime   @default(now())
+}
+
+model Meme {
+  id       Int     @id @default(autoincrement())
+  meme_url String
+  caption  String?
+  createdAt      DateTime   @default(now())
+}
