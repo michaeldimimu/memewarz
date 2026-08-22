@@ -38,10 +38,33 @@ export class GameRepository {
     return db.game.findUnique({ where: { roomCode }, include: gameInclude });
   }
 
+  findByOnChainId(onChainId: number | bigint) {
+    return db.game.findFirst({
+      where: {
+        OR: [
+          { roomCode: String(onChainId) },
+          { id: String(onChainId) }
+        ]
+      },
+      include: gameInclude,
+    });
+  }
+
   findAll() {
     return db.game.findMany({
       include: {
         host: true,
+        participants: {
+          include: {
+            player: true,
+          }
+        },
+        rounds: {
+          include: {
+            memes: true,
+            votes: true,
+          }
+        },
         _count: { select: { participants: true, rounds: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -58,9 +81,9 @@ export class GameRepository {
 
   upsertPlayer(data: { name: string; walletAddress: string }) {
     return db.player.upsert({
-      where: { walletAddress: data.walletAddress },
+      where: { walletAddress: data.walletAddress.toLowerCase() },
       update: { name: data.name },
-      create: { name: data.name, walletAddress: data.walletAddress },
+      create: { name: data.name, walletAddress: data.walletAddress.toLowerCase() },
     });
   }
 
@@ -96,51 +119,26 @@ export class GameRepository {
     return db.round.findUnique({
       where: { id },
       include: {
-        game: true,
-        memes: { include: { player: true, votes: true } },
-        votes: true,
-      },
-    });
-  }
-
-  updateRound(id: string, data: Prisma.RoundUpdateInput) {
-    return db.round.update({
-      where: { id },
-      data,
-      include: {
-        memes: { include: { player: true, votes: true } },
-        votes: true,
-        winnerMeme: true,
-      },
-    });
-  }
-
-  createMeme(data: Prisma.MemeCreateInput) {
-    return db.meme.create({
-      data,
-      include: { player: true, votes: true },
-    });
-  }
-
-  updateMeme(id: string, data: Prisma.MemeUpdateInput) {
-    return db.meme.update({
-      where: { id },
-      data,
-      include: { player: true, votes: true },
-    });
-  }
-
-  castVote(data: { roundId: string; memeId: string; voterId: string }) {
-    return db.vote.upsert({
-      where: {
-        roundId_voterId: {
-          roundId: data.roundId,
-          voterId: data.voterId,
+        game: {
+          include: {
+            participants: true,
+          },
         },
+        memes: { include: { player: true, votes: true } },
+        votes: true,
       },
-      update: { memeId: data.memeId },
-      create: data,
-      include: { meme: true, voter: true },
+    });
+  }
+
+  findActiveVotingRounds() {
+    return db.round.findMany({
+      where: {
+        status: 'voting',
+      },
+      include: {
+        game: true,
+        memes: true,
+      }
     });
   }
 }
