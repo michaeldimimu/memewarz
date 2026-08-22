@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable}`}>
-        <main className="min-h-screen grid place-content-center">
+        <main className="min-h-screen grid place-content-center py-16">
           <Image
             src="/2.jpg"
             alt="Background"
