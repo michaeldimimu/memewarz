@@ -1,13 +1,10 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tailwindcss";
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-neutral-dark-200: #121212;
+  --color-neutral-dark-100: #4d4d4d;
+  --color-neutral-light-100: #faf9f6;
+  --color-neutral-light-200: #e9e9e9;
 }
 
 html,
@@ -17,35 +14,33 @@ body {
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: #4d4d4d;
+  background-color: #faf9f6;
   font-family: var(--font-inter), sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+h1,
+h2,
+h3 {
+  color: #121212;
+}
+
+a:disabled,
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+  cursor: pointer;
+}
+
+button {
+  cursor: pointer;
 }
 
 .imgDark {
   display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
 }
