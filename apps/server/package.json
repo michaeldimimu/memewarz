@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc -p .",
+    "build": "pnpm dlx prisma generate && tsc -p .",
     "start": "node dist/index.js",
     "prisma:generate": "pnpm dlx prisma generate",
     "prisma:migrate": "pnpm dlx prisma migrate dev"
