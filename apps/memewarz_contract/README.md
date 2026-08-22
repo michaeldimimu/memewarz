@@ -67,8 +67,8 @@ enum GameStatus {
 ## 🚀 Monad Testnet Deployment
 
 ### Deployed Contract Details
-- **MemeWarz Contract Address**: [`0xEB217De4E615bb0CB8B315443B0a419845De93a5`](https://testnet.monadexplorer.com/address/0xEB217De4E615bb0CB8B315443B0a419845De93a5)
-- **Deployment Transaction**: [`0x31cde9db19686ac3c4b594b2338fb1845ee5083bc268d2ff201a6729a91a180a`](https://testnet.monadexplorer.com/tx/0x31cde9db19686ac3c4b594b2338fb1845ee5083bc268d2ff201a6729a91a180a)
+- **MemeWarz Contract Address**: [`0x4b3299302f7722600C5039c1Da1BD8822E992364`](https://testnet.monadexplorer.com/address/0x4b3299302f7722600C5039c1Da1BD8822E992364)
+- **Deployment Transaction**: [`0x62c862c20cad59973a5a506aba9779378f4617cf599ba911c70b4d3b6746acac`](https://testnet.monadexplorer.com/tx/0x62c862c20cad59973a5a506aba9779378f4617cf599ba911c70b4d3b6746acac)
 - **Pyth Entropy (Monad Testnet)**: `0x36825bf3Fbdf5a29E2d5148bfe7Dcf7B5639e320`
 - **Pyth Provider (Monad Testnet)**: `0x6CC14824Ea2918f5De5C2f75A9Da968ad4BD6344`
 - **Initial Platform Fee**: 2.5% (250 bps)
