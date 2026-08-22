@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, LoaderCircle, X } from "lucide-react";
 import { useState } from "react";
 
 const PlayerDetailsForm = ({
@@ -62,10 +62,16 @@ const JoinRoomForm = () => {
   const [roomCode, setRoomCode] = useState("");
   const [isShowingPlayerDetailsPopup, setIsShowingPlayerDetailsPopup] =
     useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsShowingPlayerDetailsPopup(true);
+    // mimic loading with settimeout for now
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setIsShowingPlayerDetailsPopup(true);
+    }, 1000);
   };
 
   return (
@@ -88,11 +94,21 @@ const JoinRoomForm = () => {
           inputMode="numeric"
           pattern="\d*"
           placeholder="e.g. 127399"
+          required
           className="w-full rounded-xl border border-gray-300 bg-neutral-light-200 text-neutral-dark-200 px-4 py-4 text-center text-3xl font-black tracking-[0.2em] outline-none placeholder:text-muted-foreground/50"
         />
-        <button className="bg-linear-to-r from-[#A3FC59] to-[#6DE668] rounded-xl flex items-center text-neutral-dark-200 gap-2 font-bold text-lg px-4 py-4 justify-center">
-          <span>Join Room</span>
-          <ArrowRight />
+        <button
+          disabled={isLoading}
+          className="bg-linear-to-r from-[#A3FC59] to-[#6DE668] rounded-xl flex items-center text-neutral-dark-200 gap-2 font-bold text-lg px-4 py-4 justify-center"
+        >
+          {isLoading ? (
+            <LoaderCircle className="animate-spin" />
+          ) : (
+            <>
+              <span>Join Room</span>
+              <ArrowRight />
+            </>
+          )}
         </button>
       </form>
 
