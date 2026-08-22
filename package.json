@@ -7,6 +7,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "prisma:generate": "pnpm dlx prisma generate",
     "clean": "rm -rf node_modules && rm -rf pnpm-lock.yaml && rm -rf dist && rm -rf apps/server/node_modules && rm -rf apps/client/node_modules"
   },
   "devDependencies": {

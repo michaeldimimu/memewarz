@@ -3,11 +3,13 @@ services:
   - type: web
     runtime: node
     name: express-backend
-    buildCommand: npm run build -- --filter=server...
-    startCommand: npm run start -- --filter=server
+    buildCommand: pnpm run build --filter=memewarz-server...
+    startCommand: pnpm run start --filter=memewarz-server
     envVars:
       - key: PORT
         value: 5000
+      - key: DATABASE_URL
+        value: "your_database_connection_string_here" # Or use valueFrom if referencing a Render DB
       - key: CLIENT_ORIGIN
         fromService:
           type: web
@@ -18,8 +20,8 @@ services:
   - type: web
     runtime: node
     name: nextjs-frontend
-    buildCommand: npm run build -- --filter=client...
-    startCommand: npm run start -- --filter=client
+    buildCommand: pnpm run build --filter=client...
+    startCommand: pnpm run start --filter=client
     envVars:
       - key: NEXT_PUBLIC_API_URL
         fromService:
