@@ -1,102 +1,85 @@
-import Image, { type ImageProps } from "next/image";
-import { Button } from "@repo/ui/button";
-import styles from "./page.module.css";
+"use client";
 
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
+import CreateRoomForm from "./components/create-room-form";
+import JoinRoomForm from "./components/join-room-form";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { injected } from "wagmi/connectors";
 
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
+const WalletButton = () => {
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending, error } = useConnect();
+  const { disconnect } = useDisconnect();
+
+  if (isConnected && address) {
+    return (
+      <div className="flex flex-col items-center gap-2 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="bg-neutral-light-200 rounded-xl px-4 py-2 font-mono text-sm text-neutral-dark-200 border border-gray-200 font-bold shadow-xs">
+            🟢 {address.slice(0, 6)}…{address.slice(-4)}
+          </div>
+          <button
+            type="button"
+            onClick={() => disconnect()}
+            className="font-bold text-sm text-neutral-dark-100 hover:text-red-500 underline transition-colors cursor-pointer"
+          >
+            Disconnect
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleConnect = async () => {
+    // Check if browser has an injected Web3 provider (e.g. MetaMask)
+    if (typeof window !== "undefined" && !(window as any).ethereum) {
+      alert(
+        "No Web3 wallet extension detected! Please install MetaMask or another Web3 browser extension to connect."
+      );
+      return;
+    }
+
+    try {
+      const targetConnector = connectors.find((c) => c.id === "injected") || injected();
+      connect({ connector: targetConnector });
+    } catch (err: any) {
+      console.error("Wallet connection error:", err);
+    }
+  };
 
   return (
+    <div className="flex flex-col items-center gap-2 mb-8">
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={handleConnect}
+        className="font-bold mx-auto block bg-neutral-dark-200 hover:bg-neutral-dark-100 px-6 py-3 rounded-xl text-neutral-light-100 text-lg disabled:opacity-50 transition-all shadow-md active:scale-95 cursor-pointer"
+      >
+        {isPending ? "Connecting..." : "Connect Wallet"}
+      </button>
+
+      {error && (
+        <p className="text-red-500 text-sm font-semibold max-w-xs text-center">
+          {error.message.includes("User rejected")
+            ? "Connection request cancelled."
+            : error.message}
+        </p>
+      )}
+    </div>
+  );
+};
+
+const Home = () => {
+  return (
     <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
+      <h1 className="text-6xl font-bold text-center mb-4 tracking-tight">
+        Welcome to <br /> <span className="font-black italic">MemeWarz</span>
+      </h1>
+      <p className="mb-8 text-2xl text-center">Enter a room code to join</p>
+      <WalletButton />
+      <JoinRoomForm />
+      <CreateRoomForm />
     </>
   );
 };
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/web/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://turborepo.dev/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-        <Button appName="web" className={styles.secondary}>
-          Open alert
-        </Button>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.dev?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.dev →
-        </a>
-      </footer>
-    </div>
-  );
-}
+export default Home;

@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ParticipantRole {
+  host
+  contestant
+  voter
+}
+
+enum GameStatus {
+  waiting
+  matchmaking
+  generating
+  voting
+  finished
+}
+
+enum RoundStatus {
+  pending
+  generating
+  voting
+  finished
+}
+
+enum MemeStatus {
+  creating
+  ready
+  locked
+}
+
+model Player {
+  id            String            @id @default(uuid())
+  name          String
+  walletAddress String            @unique
+  walletBalance Decimal           @default(0) @db.Decimal(12, 2)
+  hostedGames   Game[]            @relation("HostedGames")
+  participants  GameParticipant[]
+  memes         Meme[]
+  votes         Vote[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model Game {
+  id              String            @id @default(uuid())
+  roomName        String
+  roomCode        String            @unique
+  prompt          String?
+  status          GameStatus        @default(waiting)
+  entryFee        Decimal           @default(0) @db.Decimal(12, 2)
+  prizePool       Decimal           @default(0) @db.Decimal(12, 2)
+  roundDurationMs Int
+  maxPlayers      Int               @default(10)
+  hostId          String
+  host            Player            @relation("HostedGames", fields: [hostId], references: [id], onDelete: Cascade)
+  participants    GameParticipant[]
+  rounds          Round[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([hostId])
+  @@index([status])
+}
+
+model GameParticipant {
+  id       String          @id @default(uuid())
+  gameId   String
+  playerId String
+  role     ParticipantRole @default(voter)
+  isReady  Boolean         @default(false)
+  joinedAt DateTime        @default(now())
+  game     Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player   Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  memes    Meme[]
+
+  @@unique([gameId, playerId])
+  @@index([playerId])
+}
+
+model Round {
+  id           String      @id @default(uuid())
+  gameId       String
+  roundNumber  Int
+  status       RoundStatus @default(pending)
+  prompt       String?
+  votingEndsAt DateTime?
+  winnerMemeId String?     @unique
+  game         Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  memes        Meme[]
+  votes        Vote[]
+  winnerMeme   Meme?       @relation("WinningMeme", fields: [winnerMemeId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([gameId, roundNumber])
+  @@index([gameId, status])
+}
+
+model Meme {
+  id            String          @id @default(uuid())
+  roundId       String
+  participantId String
+  playerId      String
+  imageUrl      String?
+  caption       String?
+  status        MemeStatus      @default(creating)
+  round         Round           @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  participant   GameParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  player        Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  votes         Vote[]
+  wonRound      Round?          @relation("WinningMeme")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([roundId, participantId])
+  @@index([playerId])
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  roundId   String
+  memeId    String
+  voterId   String
+  round     Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  meme      Meme     @relation(fields: [memeId], references: [id], onDelete: Cascade)
+  voter     Player   @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([roundId, voterId])
+  @@index([memeId])
+}
