@@ -63,7 +63,7 @@ memewarz/
 
 ---
 
-## ⚙️ Core Components
+##  Core Components
 
 ### 1. Smart Contracts (`apps/memewarz_contract`)
 - Built with **Foundry** and **OpenZeppelin Contracts**.
@@ -82,7 +82,7 @@ memewarz/
 
 ---
 
-## 🔌 API Reference (`apps/server`)
+##  API Reference (`apps/server`)
 
 ### REST Endpoints
 
@@ -109,7 +109,7 @@ memewarz/
 
 ---
 
-## 🛠️ Environment Configuration
+##  Environment Configuration
 
 ### Contract (`apps/memewarz_contract/.env`)
 ```env
@@ -134,7 +134,7 @@ CLOUDINARY_API_SECRET=<CLOUDINARY_API_SECRET>
 
 ---
 
-## 🚀 Getting Started Locally
+##  Getting Started Locally
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (>= 18)
