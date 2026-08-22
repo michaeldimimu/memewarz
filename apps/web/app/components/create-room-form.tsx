@@ -2,16 +2,82 @@
 
 import { X } from "lucide-react";
 import { useState } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther, decodeEventLog } from "viem";
+import { useRouter } from "next/navigation";
+import { memeWarzContract, MEME_WARZ_ABI } from "../config/contract";
 
 const RoomCreationForm = ({
   setIsShowingRoomCreationForm,
 }: {
   setIsShowingRoomCreationForm: (show: boolean) => void;
 }) => {
+  const router = useRouter();
+  const { address, isConnected } = useAccount();
+  const { writeContract, data: txHash, isPending: isSigning } = useWriteContract();
+  const { isLoading: isConfirming, data: receipt } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  const [roomName, setRoomName] = useState("");
+  const [timeLimit, setTimeLimit] = useState("60");
+  const [prizePool, setPrizePool] = useState("0.01");
+  const [error, setError] = useState<string | null>(null);
+
+  // Parse game code from tx receipt logs
+  if (receipt && receipt.status === "success") {
+    try {
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: MEME_WARZ_ABI,
+            data: log.data,
+            topics: log.topics,
+          }) as unknown as { eventName: string; args: { gameCode: number } };
+          if (decoded.eventName === "GameCreated" && decoded.args.gameCode) {
+            const code = String(decoded.args.gameCode);
+            router.push(`/rooms/${code}`);
+          }
+        } catch {
+          // Not the event we're looking for
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Room created!");
+    setError(null);
+
+    if (!isConnected || !address) {
+      setError("Please connect your wallet first");
+      return;
+    }
+
+    const seconds = Number(timeLimit);
+    if (isNaN(seconds) || seconds < 30) {
+      setError("Time limit must be at least 30 seconds");
+      return;
+    }
+
+    const prizeValue = Number(prizePool);
+    if (isNaN(prizeValue) || prizeValue <= 0) {
+      setError("Prize pool must be greater than 0");
+      return;
+    }
+
+    writeContract({
+      ...memeWarzContract,
+      functionName: "createGame",
+      args: [roomName || "MemeWarz Room", BigInt(seconds), BigInt(0)],
+      value: parseEther(prizePool),
+    });
   };
+
+  const isLoading = isSigning || isConfirming;
+
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/60 flex items-center justify-center z-50">
       <form
@@ -36,34 +102,58 @@ const RoomCreationForm = ({
             <input
               type="text"
               id="room-name"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder="MemeWarz Room"
               className="w-full rounded-xl border border-gray-300 bg-neutral-light-200 px-4 py-2 text-center outline-none placeholder:text-muted-foreground/50"
             />
           </div>
           <div>
             <label htmlFor="time-limit" className="font-medium mb-2">
-              Time limit (seconds):
+              Voting duration (seconds):
             </label>
             <input
-              type="text"
+              type="number"
               id="time-limit"
+              value={timeLimit}
+              onChange={(e) => setTimeLimit(e.target.value)}
+              min={30}
               className="w-full rounded-xl border border-gray-300 bg-neutral-light-200 px-4 py-2 text-center outline-none placeholder:text-muted-foreground/50"
             />
           </div>
           <div>
             <label htmlFor="prize-pool" className="font-medium mb-2">
-              Prize pool(MON):
+              Prize pool (MON):
             </label>
             <input
               type="text"
               id="prize-pool"
+              value={prizePool}
+              onChange={(e) => setPrizePool(e.target.value)}
               className="w-full rounded-xl border border-gray-300 bg-neutral-light-200 px-4 py-2 text-center outline-none placeholder:text-muted-foreground/50"
             />
           </div>
+
+          {error && (
+            <p className="text-red-500 text-sm text-center">{error}</p>
+          )}
+
+          {txHash && !receipt && (
+            <p className="text-sm text-center text-neutral-dark-100">
+              Confirming transaction…
+            </p>
+          )}
+
           <button
             type="submit"
-            className="font-bold mt-2 w-full bg-neutral-dark-200 px-4 py-3 rounded-xl text-neutral-light-100"
+            disabled={isLoading}
+            className="font-bold mt-2 w-full bg-neutral-dark-200 px-4 py-3 rounded-xl text-neutral-light-100 disabled:opacity-50"
           >
-            Create Room
+            {isSigning
+              ? "Confirm in wallet…"
+              : isConfirming
+                ? "Confirming…"
+                : "Create Room"}
           </button>
         </div>
       </form>
