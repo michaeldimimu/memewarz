@@ -2,17 +2,72 @@
 
 import { ArrowRight, LoaderCircle, X } from "lucide-react";
 import { useState } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useRouter } from "next/navigation";
+import { fetchGameByCode, joinGameAPI, type GameData } from "../lib/api";
+import { memeWarzContract } from "../config/contract";
 
 const PlayerDetailsForm = ({
-  setIsShowingPlayerDetailsPopup,
+  game,
+  onClose,
 }: {
-  setIsShowingPlayerDetailsPopup: (show: boolean) => void;
+  game: GameData;
+  onClose: () => void;
 }) => {
+  const router = useRouter();
+  const { address } = useAccount();
   const [playerName, setPlayerName] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { writeContract, data: txHash, isPending: isSigning } = useWriteContract();
+  const { isLoading: isConfirming, data: receipt } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  // Once the on-chain tx is confirmed, register the player name on the server
+  if (receipt && receipt.status === "success" && !isJoining) {
+    setIsJoining(true);
+    const walletAddr = address || "";
+    joinGameAPI(game.roomCode, {
+      name: playerName || walletAddr.slice(0, 6),
+      walletAddress: walletAddr,
+      role: "voter",
+    })
+      .then(() => {
+        router.push(`/rooms/${game.roomCode}`);
+      })
+      .catch((err) => {
+        // The server's indexer may have already registered us — navigate anyway
+        console.warn("Server join failed (may already be indexed):", err);
+        router.push(`/rooms/${game.roomCode}`);
+      });
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(playerName);
+    setError(null);
+
+    if (!address) {
+      setError("Please connect your wallet first");
+      return;
+    }
+
+    const entryFee = BigInt(
+      Math.round(Number(game.entryFee) * 1e18)
+    );
+
+    // Call the smart contract joinGame
+    writeContract({
+      ...memeWarzContract,
+      functionName: "joinGame",
+      args: [Number(game.roomCode)],
+      value: entryFee,
+    });
   };
+
+  const isLoading = isSigning || isConfirming || isJoining;
+
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/60 flex items-center justify-center z-50">
       <form
@@ -23,16 +78,27 @@ const PlayerDetailsForm = ({
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => setIsShowingPlayerDetailsPopup(false)}
+              onClick={onClose}
               className="font-bold bg-neutral-light-200 size-8 grid place-content-center rounded-xl text-neutral-dark-200"
             >
               <X />
             </button>
           </div>
           <h2 className="text-2xl text-center font-bold leading-[100%]">
-            Join Room - Monad Blitz Hackathon
+            Join Room — {game.roomName}
           </h2>
-          <div className="bg-linear-to-br from-[#F8810C] to-[#BB1529] size-32 mx-auto mb-4 rounded-xl" />
+
+          <div className="flex flex-col items-center gap-2">
+            <div className="bg-linear-to-br from-[#F8810C] to-[#BB1529] size-32 mx-auto mb-2 rounded-xl" />
+            <p className="text-sm text-neutral-dark-100">
+              {game.participants.length}/{game.maxPlayers} players •{" "}
+              <span className="font-bold text-neutral-dark-200">
+                {Number(game.prizePool)} MON
+              </span>{" "}
+              prize pool
+            </p>
+          </div>
+
           <div>
             <label
               htmlFor="player-name"
@@ -43,13 +109,28 @@ const PlayerDetailsForm = ({
             <input
               type="text"
               id="player-name"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="Your display name"
               className="w-full rounded-xl border border-gray-300 bg-neutral-light-200 px-4 py-2 text-center outline-none placeholder:text-muted-foreground/50"
             />
+
+            {error && (
+              <p className="text-red-500 text-sm text-center mt-2">{error}</p>
+            )}
+
             <button
               type="submit"
-              className="font-bold mt-2 w-full bg-neutral-dark-200 px-4 py-3 rounded-xl text-neutral-light-100"
+              disabled={isLoading}
+              className="font-bold mt-2 w-full bg-neutral-dark-200 px-4 py-3 rounded-xl text-neutral-light-100 disabled:opacity-50"
             >
-              Enter
+              {isSigning
+                ? "Confirm in wallet…"
+                : isConfirming
+                  ? "Confirming tx…"
+                  : isJoining
+                    ? "Joining…"
+                    : "Enter"}
             </button>
           </div>
         </div>
@@ -60,18 +141,25 @@ const PlayerDetailsForm = ({
 
 const JoinRoomForm = () => {
   const [roomCode, setRoomCode] = useState("");
-  const [isShowingPlayerDetailsPopup, setIsShowingPlayerDetailsPopup] =
-    useState(false);
+  const [game, setGame] = useState<GameData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // mimic loading with settimeout for now
+    setError(null);
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      const data = await fetchGameByCode(roomCode);
+      setGame(data.game);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Room not found"
+      );
+    } finally {
       setIsLoading(false);
-      setIsShowingPlayerDetailsPopup(true);
-    }, 1000);
+    }
   };
 
   return (
@@ -82,14 +170,12 @@ const JoinRoomForm = () => {
           name="room-code"
           id="room-code"
           value={roomCode}
-          // 1. Strip non-digits and limit to 6 characters in state
           onChange={(e) => {
             const onlyNumbers = e.target.value.replace(/\D/g, "");
             if (onlyNumbers.length <= 6) {
               setRoomCode(onlyNumbers);
             }
           }}
-          // 2. HTML constraints for better UX
           maxLength={6}
           inputMode="numeric"
           pattern="\d*"
@@ -97,6 +183,9 @@ const JoinRoomForm = () => {
           required
           className="w-full rounded-xl border border-gray-300 bg-neutral-light-200 text-neutral-dark-200 px-4 py-4 text-center text-3xl font-black tracking-[0.2em] outline-none placeholder:text-muted-foreground/50"
         />
+        {error && (
+          <p className="text-red-500 text-sm text-center">{error}</p>
+        )}
         <button
           disabled={isLoading}
           className="bg-linear-to-r from-[#A3FC59] to-[#6DE668] border border-[#6DE668] rounded-xl flex items-center text-neutral-dark-200 gap-2 font-bold text-lg px-4 py-4 justify-center"
@@ -112,10 +201,8 @@ const JoinRoomForm = () => {
         </button>
       </form>
 
-      {isShowingPlayerDetailsPopup && (
-        <PlayerDetailsForm
-          setIsShowingPlayerDetailsPopup={setIsShowingPlayerDetailsPopup}
-        />
+      {game && (
+        <PlayerDetailsForm game={game} onClose={() => setGame(null)} />
       )}
     </>
   );
