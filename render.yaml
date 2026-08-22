@@ -1,0 +1,28 @@
+services:
+  # 1. Express Backend Web Service
+  - type: web
+    runtime: node
+    name: express-backend
+    buildCommand: npm run build -- --filter=server...
+    startCommand: npm run start -- --filter=server
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: CLIENT_ORIGIN
+        fromService:
+          type: web
+          name: nextjs-frontend
+          property: connectionString
+
+  # 2. Next.js Frontend Web Service
+  - type: web
+    runtime: node
+    name: nextjs-frontend
+    buildCommand: npm run build -- --filter=client...
+    startCommand: npm run start -- --filter=client
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: express-backend
+          property: connectionString
