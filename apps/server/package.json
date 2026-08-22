@@ -15,6 +15,8 @@
     "helmet": "^7.0.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "ts-node-dev": "^2.0.0"
   }
 }
