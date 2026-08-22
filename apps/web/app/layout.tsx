@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import Image from "next/image";
 
 const inter = localFont({
   src: "./fonts/Inter-VariableFont_opsz,wght.ttf",
@@ -19,7 +20,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable}`}>{children}</body>
+      <body className={`${inter.variable}`}>
+        <main className="min-h-screen grid place-content-center">
+          <Image
+            src="/2.jpg"
+            alt="Background"
+            width={500}
+            height={500}
+            className="absolute -left-50 opacity-30 -rotate-30 bg-linear-to-b from-gray-100 to-gray-200 h-125 w-150 -z-10"
+          />
+          {children}
+          <Image
+            src="/8.jpg"
+            alt="Background"
+            width={500}
+            height={500}
+            className="absolute -right-50 opacity-30 rotate-20 bg-linear-to-b from-gray-100 to-gray-200 h-100 w-125 -z-10"
+          />
+        </main>
+      </body>
     </html>
   );
 }
