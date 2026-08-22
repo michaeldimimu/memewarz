@@ -1,11 +1,11 @@
 import hostRepo from '../repos/hostRepository';
 
 export class HostService {
-  async createHost(data: { host_name: string; wallet_balance?: number }) {
+  createHost(data: { name: string; walletAddress: string }) {
     return hostRepo.create(data);
   }
 
-  async getHost(id: number) {
+  getHost(id: string) {
     return hostRepo.findById(id);
   }
 }

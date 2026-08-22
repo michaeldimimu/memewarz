@@ -1,15 +1,15 @@
 import playerRepo from '../repos/playerRepository';
 
 export class PlayerService {
-  async createPlayer(payload: { player_name: string; player_type: any; wallet_id: string }) {
-    return playerRepo.create(payload as any);
+  createPlayer(payload: { name: string; walletAddress: string }) {
+    return playerRepo.upsertByWallet(payload);
   }
 
-  async getPlayer(id: number) {
+  getPlayer(id: string) {
     return playerRepo.findById(id);
   }
 
-  async listPlayers() {
+  listPlayers() {
     return playerRepo.findAll();
   }
 }

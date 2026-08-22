@@ -1,24 +1,36 @@
+import { Prisma } from '@prisma/client';
 import db from '../config/db';
-import { Player, PlayerType } from '@prisma/client';
 
 export class PlayerRepository {
-  async create(data: { player_name: string; player_type: PlayerType; wallet_id: string; wallet_balance?: number; }): Promise<Player> {
+  create(data: Prisma.PlayerCreateInput) {
     return db.player.create({ data });
   }
 
-  async findById(id: number) {
+  upsertByWallet(data: { name: string; walletAddress: string }) {
+    return db.player.upsert({
+      where: { walletAddress: data.walletAddress },
+      update: { name: data.name },
+      create: data,
+    });
+  }
+
+  findById(id: string) {
     return db.player.findUnique({ where: { id } });
   }
 
-  async findAll() {
-    return db.player.findMany();
+  findByWallet(walletAddress: string) {
+    return db.player.findUnique({ where: { walletAddress } });
   }
 
-  async update(id: number, data: Partial<Player>) {
+  findAll() {
+    return db.player.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  update(id: string, data: Prisma.PlayerUpdateInput) {
     return db.player.update({ where: { id }, data });
   }
 
-  async delete(id: number) {
+  delete(id: string) {
     return db.player.delete({ where: { id } });
   }
 }

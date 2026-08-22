@@ -1,11 +1,11 @@
 import memeRepo from '../repos/memeRepository';
 
 export class MemeService {
-  async createMeme(data: { meme_url: string; caption?: string }) {
+  createMeme(data: Parameters<typeof memeRepo.create>[0]) {
     return memeRepo.create(data);
   }
 
-  async listMemes() {
+  listMemes() {
     return memeRepo.findAll();
   }
 }

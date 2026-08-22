@@ -1,24 +1,26 @@
 import db from '../config/db';
 
 export class HostRepository {
-  async create(data: { host_name: string; wallet_balance?: number }) {
-    return db.host.create({ data });
+  create(data: { name: string; walletAddress: string }) {
+    return db.player.upsert({
+      where: { walletAddress: data.walletAddress },
+      update: { name: data.name },
+      create: data,
+    });
   }
 
-  async findById(id: number) {
-    return db.host.findUnique({ where: { id } });
+  findById(id: string) {
+    return db.player.findUnique({
+      where: { id },
+      include: { hostedGames: true },
+    });
   }
 
-  async findAll() {
-    return db.host.findMany();
-  }
-
-  async update(id: number, data: any) {
-    return db.host.update({ where: { id }, data });
-  }
-
-  async delete(id: number) {
-    return db.host.delete({ where: { id } });
+  findAll() {
+    return db.player.findMany({
+      where: { hostedGames: { some: {} } },
+      include: { hostedGames: true },
+    });
   }
 }
 

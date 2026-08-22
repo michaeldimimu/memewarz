@@ -6,44 +6,131 @@ datasource db {
   provider = "postgresql"
 }
 
-enum PlayerType {
+enum ParticipantRole {
+  host
   contestant
   voter
 }
 
-model Player {
-  id             Int        @id @default(autoincrement())
-  player_name    String
-  player_type    PlayerType
-  wallet_id      String
-  wallet_balance Float      @default(0)
-  games          Game[]
-  createdAt      DateTime   @default(now())
+enum GameStatus {
+  waiting
+  matchmaking
+  generating
+  voting
+  finished
 }
 
-model Host {
-  id             Int      @id @default(autoincrement())
-  host_name      String
-  wallet_balance Float    @default(0)
-  games          Game[]
-  createdAt      DateTime   @default(now())
+enum RoundStatus {
+  pending
+  generating
+  voting
+  finished
+}
+
+enum MemeStatus {
+  creating
+  ready
+  locked
+}
+
+model Player {
+  id            String            @id @default(uuid())
+  name          String
+  walletAddress String            @unique
+  walletBalance Decimal           @default(0) @db.Decimal(12, 2)
+  hostedGames   Game[]            @relation("HostedGames")
+  participants  GameParticipant[]
+  memes         Meme[]
+  votes         Vote[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 }
 
 model Game {
-  id         Int      @id @default(autoincrement())
-  room_name  String
-  time_limit String
-  prize_pool Float    @default(0)
-  game_code  Int      @unique
-  host_id    Int
-  host       Host     @relation(fields: [host_id], references: [id])
-  players    Player[] // many-to-many: game <-> players
-  createdAt      DateTime   @default(now())
+  id              String            @id @default(uuid())
+  roomName        String
+  roomCode        String            @unique
+  prompt          String?
+  status          GameStatus        @default(waiting)
+  entryFee        Decimal           @default(0) @db.Decimal(12, 2)
+  prizePool       Decimal           @default(0) @db.Decimal(12, 2)
+  roundDurationMs Int
+  maxPlayers      Int               @default(10)
+  hostId          String
+  host            Player            @relation("HostedGames", fields: [hostId], references: [id], onDelete: Cascade)
+  participants    GameParticipant[]
+  rounds          Round[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([hostId])
+  @@index([status])
+}
+
+model GameParticipant {
+  id       String          @id @default(uuid())
+  gameId   String
+  playerId String
+  role     ParticipantRole @default(voter)
+  isReady  Boolean         @default(false)
+  joinedAt DateTime        @default(now())
+  game     Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player   Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  memes    Meme[]
+
+  @@unique([gameId, playerId])
+  @@index([playerId])
+}
+
+model Round {
+  id           String      @id @default(uuid())
+  gameId       String
+  roundNumber  Int
+  status       RoundStatus @default(pending)
+  prompt       String?
+  votingEndsAt DateTime?
+  winnerMemeId String?     @unique
+  game         Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  memes        Meme[]
+  votes        Vote[]
+  winnerMeme   Meme?       @relation("WinningMeme", fields: [winnerMemeId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([gameId, roundNumber])
+  @@index([gameId, status])
 }
 
 model Meme {
-  id       Int     @id @default(autoincrement())
-  meme_url String
-  caption  String?
-  createdAt      DateTime   @default(now())
+  id            String          @id @default(uuid())
+  roundId       String
+  participantId String
+  playerId      String
+  imageUrl      String?
+  caption       String?
+  status        MemeStatus      @default(creating)
+  round         Round           @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  participant   GameParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  player        Player          @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  votes         Vote[]
+  wonRound      Round?          @relation("WinningMeme")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([roundId, participantId])
+  @@index([playerId])
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  roundId   String
+  memeId    String
+  voterId   String
+  round     Round    @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  meme      Meme     @relation(fields: [memeId], references: [id], onDelete: Cascade)
+  voter     Player   @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([roundId, voterId])
+  @@index([memeId])
 }

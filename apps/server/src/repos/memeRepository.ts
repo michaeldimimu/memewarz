@@ -1,19 +1,23 @@
+import { Prisma } from '@prisma/client';
 import db from '../config/db';
 
 export class MemeRepository {
-  async create(data: { meme_url: string; caption?: string }) {
+  create(data: Prisma.MemeCreateInput) {
     return db.meme.create({ data });
   }
 
-  async findById(id: number) {
-    return db.meme.findUnique({ where: { id } });
+  findById(id: string) {
+    return db.meme.findUnique({ where: { id }, include: { player: true, votes: true } });
   }
 
-  async findAll() {
-    return db.meme.findMany();
+  findAll() {
+    return db.meme.findMany({
+      include: { player: true, votes: true },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
-  async delete(id: number) {
+  delete(id: string) {
     return db.meme.delete({ where: { id } });
   }
 }
