@@ -1,3 +1,4 @@
+import CreateRoomForm from "./components/create-room-form";
 import JoinRoomForm from "./components/join-room-form";
 
 const Home = () => {
@@ -8,6 +9,7 @@ const Home = () => {
       </h1>
       <p className="mb-8 text-2xl text-center">Enter a room code to join</p>
       <JoinRoomForm />
+      <CreateRoomForm />
     </>
   );
 };

@@ -99,7 +99,7 @@ const JoinRoomForm = () => {
         />
         <button
           disabled={isLoading}
-          className="bg-linear-to-r from-[#A3FC59] to-[#6DE668] rounded-xl flex items-center text-neutral-dark-200 gap-2 font-bold text-lg px-4 py-4 justify-center"
+          className="bg-linear-to-r from-[#A3FC59] to-[#6DE668] border border-[#6DE668] rounded-xl flex items-center text-neutral-dark-200 gap-2 font-bold text-lg px-4 py-4 justify-center"
         >
           {isLoading ? (
             <LoaderCircle className="animate-spin" />
